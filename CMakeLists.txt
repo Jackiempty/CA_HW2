@@ -37,27 +37,48 @@ set(RV32EMU_BIN ${RV32EMU_DIR}/build/rv32emu)
 # ---------------------------------------------------------
 file(GLOB ASM_SOURCES "${CMAKE_SOURCE_DIR}/asm/*.s" "${CMAKE_SOURCE_DIR}/asm/*.S")
 
-add_executable(hello_elf ${ASM_SOURCES})
+set(ALL_ELF_TARGETS)
+set(ALL_BASENAMES)
 
-target_link_options(hello_elf PRIVATE
-    -nostdlib
-    -nostartfiles
-    -T${CMAKE_SOURCE_DIR}/asm/linker.ld
+foreach(ASM_FILE IN LISTS ASM_SOURCES)
+    # get file name without file extension
+    get_filename_component(BASENAME ${ASM_FILE} NAME_WE)
+    list(APPEND ALL_BASENAMES ${BASENAME})
+
+    # ELF target name
+    set(ELF_TARGET ${BASENAME}_elf)
+    list(APPEND ALL_ELF_TARGETS ${ELF_TARGET})
+
+    # correspond ELF
+    add_executable(${ELF_TARGET} ${ASM_FILE})
+
+    # specify linker script
+    target_link_options(${ELF_TARGET} PRIVATE
+        -nostdlib
+        -nostartfiles
+        -T${CMAKE_SOURCE_DIR}/asm/linker.ld
+    )
+
+    # correspond run target
+    add_custom_target(run_${BASENAME}
+        COMMAND ${RV32EMU_BIN} ${CMAKE_BINARY_DIR}/${ELF_TARGET}
+        DEPENDS rv32emu_build ${ELF_TARGET}
+        COMMENT "Running ${ELF_TARGET} under rv32emu..."
+    )
+
+    # CTest support
+    add_test(NAME ${BASENAME}_test
+        COMMAND ${RV32EMU_BIN} ${CMAKE_BINARY_DIR}/${ELF_TARGET}
+    )
+endforeach()
+
+# ---------------------------------------------------------
+# Build a run_all target to execute all ELF targets
+# ---------------------------------------------------------
+add_custom_target(run_all
+    COMMENT "Running all ELF programs under rv32emu..."
 )
 
-# ---------------------------------------------------------
-# Add simple run target
-# ---------------------------------------------------------
-add_custom_target(run
-    COMMAND ${RV32EMU_BIN} ${CMAKE_BINARY_DIR}/hello_elf
-    DEPENDS rv32emu_build hello_elf
-    COMMENT "Running program under rv32emu..."
-)
-
-# ---------------------------------------------------------
-# Optional: CTest support
-# ---------------------------------------------------------
-include(CTest)
-add_test(NAME hello_test
-    COMMAND ${RV32EMU_BIN} ${CMAKE_BINARY_DIR}/hello_elf
-)
+foreach(BASENAME IN LISTS ALL_BASENAMES)
+    add_dependencies(run_all run_${BASENAME})
+endforeach()
