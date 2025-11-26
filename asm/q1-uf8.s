@@ -6,7 +6,7 @@ _start:
     li  a0, 0
     ecall
 
-# .data
+.data
 .section .rodata
 str_all_passed: .asciz "All tests passed.\n"
                 .set pass_str_size, .-str_all_passed

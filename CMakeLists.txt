@@ -67,6 +67,7 @@ foreach(ASM_FILE IN LISTS ASM_SOURCES)
     )
 
     # CTest support
+    include(CTest)
     add_test(NAME ${BASENAME}_test
         COMMAND ${RV32EMU_BIN} ${CMAKE_BINARY_DIR}/${ELF_TARGET}
     )
