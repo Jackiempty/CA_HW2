@@ -1,11 +1,4 @@
 .global _start
-_start:
-    jal ra, setup      # initialize stack pointer
-    jal ra, main       # call main
-    li  a7, 93          # SYSEXIT
-    li  a0, 0
-    ecall
-
 .data
 .section .rodata
 str_all_passed: .asciz "All tests passed.\n"
@@ -14,6 +7,13 @@ str_fail: .asciz "Test failed!\n"
             .set fail_str_size, .-str_fail
 
 .text
+_start:
+    jal ra, setup      # initialize stack pointer
+    jal ra, main       # call main
+    li  a7, 93         # SYSEXIT
+    li  a0, 0
+    ecall
+
 setup:
     # li    ra, -1
     li    sp, 0x7ffffff0
